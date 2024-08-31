@@ -1,13 +1,13 @@
-// get weather today in city
-// get weather tomorrow in city
-// get weather in city over the year
-// get weather ' is it going to snow/rain/sunshine today'
-
+import routes from "./routes";
+import redis from "./redis";
 import Fastify from "fastify";
 
 const fastify = Fastify({
   logger: true,
 });
+
+fastify.register(redis);
+fastify.register(routes);
 
 const start = async () => {
   try {
@@ -17,4 +17,5 @@ const start = async () => {
     process.exit(1);
   }
 };
+
 start();
