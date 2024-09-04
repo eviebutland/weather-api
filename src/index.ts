@@ -9,6 +9,7 @@ const fastify = Fastify({
 
 dotenv.config({ path: 'env' });
 // fastify.register(await connectToRedis());
+
 fastify.register(routes);
 const schema = {
   type: 'object',
@@ -30,10 +31,8 @@ fastify
   .register(fastifyEnv, options)
   .ready((err) => {
     if (err) console.error(err)
-
-    console.log(fastify.getEnvs())
-    // output: { PORT: 3000 }
   })
+
 const start = async () => {
   try {
     await fastify.listen({ port: 3000 });
