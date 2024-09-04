@@ -11,17 +11,13 @@ import { FastifyReply, FastifyRequest } from "fastify";
 
 export async function getWeatherToday(request: FastifyRequest, reply: FastifyReply)  {
     // check redis first
-
     try {
-        console.log(process.env.WEATHER_API_KEY)
-        const response = await fetch(`https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/london?unitGroup=metric&include=days&key=SSGXSX3DAPQDLCKGK6VL9P2UZ&contentType=json`, {
+        const response = await fetch(`https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/london?unitGroup=metric&include=days&key=${request.getEnvs()?.WEATHER_API_KEY}&contentType=json`, {
             "method": "GET",
         })
 
         const weather = await response.json()
         return reply.status(200).send(weather)
-
-         
     } catch(error) {
         console.log(error)
         return reply.status(400).send(error)
