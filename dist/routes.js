@@ -8,25 +8,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-const routes_1 = require("./routes");
-const redis_1 = require("./redis");
-const fastify_1 = __importDefault(require("fastify"));
-const fastify = (0, fastify_1.default)({
-    logger: true,
-});
-fastify.register(redis_1.connectToRedis);
-fastify.register(routes_1.routes);
-const start = () => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        yield fastify.listen({ port: 3000 });
-    }
-    catch (err) {
-        fastify.log.error(err);
-        process.exit(1);
-    }
-});
-start();
+exports.routes = routes;
+function routes(fastify, options) {
+    return __awaiter(this, void 0, void 0, function* () {
+        fastify.get("/", (request, reply) => __awaiter(this, void 0, void 0, function* () {
+            return { hello: "world" }; // this will call a function in the get file
+        }));
+    });
+}

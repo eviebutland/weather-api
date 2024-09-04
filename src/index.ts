@@ -1,12 +1,13 @@
-import routes from "./routes";
-import redis from "./redis";
+import {routes} from "./routes";
+import {connectToRedis} from "./redis";
 import Fastify from "fastify";
 
 const fastify = Fastify({
   logger: true,
 });
 
-fastify.register(redis);
+
+// fastify.register(await connectToRedis());
 fastify.register(routes);
 
 const start = async () => {
