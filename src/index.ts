@@ -3,6 +3,7 @@ import {connectToRedis} from "./redis";
 import Fastify from "fastify";
 import dotenv from 'dotenv';
 import fastifyEnv from "@fastify/env";
+import rateLimit from '@fastify/rate-limit'
 const fastify = Fastify({
   logger: true,
 });
@@ -11,6 +12,11 @@ dotenv.config({ path: 'env' });
 // fastify.register(await connectToRedis());
 
 fastify.register(routes);
+ fastify.register(rateLimit, {
+  max: 100,
+  timeWindow: '1 minute'
+})
+
 const schema = {
   type: 'object',
   required: [ 'WEATHER_API_KEY' ],
@@ -43,3 +49,11 @@ const start = async () => {
 };
 
 start();
+
+fastify.setErrorHandler(function (error, request, reply) {
+  if (error.statusCode === 429) {
+    reply.code(429)
+    error.message = 'You hit the rate limit!'
+  }
+  reply.send(error)
+})
