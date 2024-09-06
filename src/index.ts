@@ -4,12 +4,12 @@ import Fastify from "fastify";
 import dotenv from 'dotenv';
 import fastifyEnv from "@fastify/env";
 import rateLimit from '@fastify/rate-limit'
+
 const fastify = Fastify({
   logger: true,
 });
 
 dotenv.config({ path: 'env' });
-// fastify.register(await connectToRedis());
 
 fastify.register(routes);
  fastify.register(rateLimit, {
@@ -33,11 +33,14 @@ const options = {
   dotenv: true
 }
 
+fastify.register(connectToRedis).ready((err) => {
+  if (err) console.error(err)
+})
 fastify
   .register(fastifyEnv, options)
   .ready((err) => {
     if (err) console.error(err)
-  })
+})
 
 const start = async () => {
   try {

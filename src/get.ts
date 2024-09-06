@@ -11,6 +11,7 @@ async function getWeather (day: string, city:string, apiKey: string) {
 
 export async function getWeatherToday(request: FastifyRequest, reply: FastifyReply)  {
     // check redis first
+    // HEXISTS [london]:[dateUTC] conditions
     try {
         if (!request.query?.city) {
             return reply.status(400).send({message: 'Please provide a city'})
@@ -29,6 +30,10 @@ export async function getWeatherToday(request: FastifyRequest, reply: FastifyRep
         }
         
         const weather = await response.json()
+
+
+        // call to redis SET weather weathet NX 
+        // NX being set this if it doesn't already exist
         return reply.status(200).send(weather)
     } catch(error) {
         console.log(error)
