@@ -4,6 +4,7 @@ import Fastify from "fastify";
 import dotenv from 'dotenv';
 import fastifyEnv from "@fastify/env";
 import rateLimit from '@fastify/rate-limit'
+import redis from '@fastify/redis'
 
 const fastify = Fastify({
   logger: true,
@@ -34,8 +35,15 @@ const options = {
 }
 
 fastify.register(connectToRedis).ready((err) => {
+  console.log('connected to redis')
   if (err) console.error(err)
 })
+
+fastify.register(redis, {
+  host: '127.0.0.1'
+})
+
+
 fastify
   .register(fastifyEnv, options)
   .ready((err) => {

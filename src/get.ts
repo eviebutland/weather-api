@@ -1,6 +1,4 @@
-
-// get weather 'is it going to snow/rain/sunshine today'
-
+import { FastifyRedis } from "@fastify/redis";
 import { FastifyReply, FastifyRequest } from "fastify";
 
 async function getWeather (day: string, city:string, apiKey: string) {
@@ -9,10 +7,18 @@ async function getWeather (day: string, city:string, apiKey: string) {
     })
 }
 
-export async function getWeatherToday(request: FastifyRequest, reply: FastifyReply)  {
-    // check redis first
+export async function getWeatherToday(redis: FastifyRedis, request: FastifyRequest, reply: FastifyReply)  {
     // HEXISTS [london]:[dateUTC] conditions
     try {
+        
+      
+        const value = await redis.hexists('location', 'london');
+
+        console.log(value)
+        if(value > 0){
+            // update key with new temp?
+        }
+       
         if (!request.query?.city) {
             return reply.status(400).send({message: 'Please provide a city'})
         }
@@ -42,7 +48,7 @@ export async function getWeatherToday(request: FastifyRequest, reply: FastifyRep
     }
 }
 
-export async function getWeatherTomorrow(request: FastifyRequest, reply: FastifyReply){
+export async function getWeatherTomorrow(redis: FastifyRedis, request: FastifyRequest, reply: FastifyReply){
     // check redis first
     try {
         if (!request.query?.city) {
@@ -71,7 +77,7 @@ export async function getWeatherTomorrow(request: FastifyRequest, reply: Fastify
     }
 }
 
-export async function getWeatherConditionToday(request: FastifyRequest, reply: FastifyReply){
+export async function getWeatherConditionToday(redis: FastifyRedis, request: FastifyRequest, reply: FastifyReply){
     // check redis first
     try {
         if (!request.query?.city) {

@@ -12,6 +12,3 @@ export async function connectToRedis() {
     console.log("Redis Client Error", error);
   }
 }
-
-
-
