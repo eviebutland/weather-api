@@ -8,43 +8,50 @@ async function getWeather (day: string, city:string, apiKey: string) {
 }
 
 export async function getWeatherToday(redis: FastifyRedis, request: FastifyRequest, reply: FastifyReply)  {
-    // HEXISTS [london]:[dateUTC] conditions
     try {
-        
-      
-        const value = await redis.hexists('location', 'london');
-
-        console.log(value)
-        if(value > 0){
-            // update key with new temp?
-        }
-       
         if (!request.query?.city) {
             return reply.status(400).send({message: 'Please provide a city'})
         }
+
         const today = new Date().toISOString()
-
-        const response = await getWeather(today,request.query?.city, request.getEnvs()?.WEATHER_API_KEY)
-    
-
-        if(response.status === 400){
-            return reply.status(400).send({error: 'Bad request, please check your city'})
-        } 
-
-        if(response.status === 500){
-            return reply.status(500).send({error: 'Something went wrong, please try again later'})
-        }
+        const shorthandToday = today.split('T')[0]
         
-        const weather = await response.json()
+        const storedTemp = await redis.hget(`${request.query?.city}:${shorthandToday}`, 'temp')
+       
+        if(storedTemp){
+            const today = await redis.hgetall(`${request.query?.city}:${shorthandToday}`)
+            
+            return reply.status(200).send({message: 'Collected from stored value', today})
+        } else {
+            const response = await getWeather(today, request.query?.city, request.getEnvs()?.WEATHER_API_KEY)
+        
+            if(response.status === 400){
+                return reply.status(400).send({error: 'Bad request, please check your city'})
+            } 
+    
+            if(response.status === 500){
+                return reply.status(500).send({error: 'Something went wrong, please try again later'})
+            }
+            
+            const weather = await response.json()
+    
+            await redis.hset(`${request.query?.city}:${shorthandToday}`, 
+                'temp', weather.days[0].temp, 
+                'description', weather.days[0].description,
+                'tempmax', weather.days[0].tempmax, 
+                'precip', weather.days[0].precip, 
+                'snow',  weather.days[0].snow, 
+                'feelslike', weather.days[0].feelslike,
+                'uvindex',  weather.days[0].uvindex)
+            return reply.status(200).send(weather)
+        }
+       
+        
+        
 
-
-        // call to redis SET weather weathet NX 
-        // NX being set this if it doesn't already exist
-        return reply.status(200).send(weather)
     } catch(error) {
         console.log(error)
         return reply.status(400).send(error)
-        
     }
 }
 
