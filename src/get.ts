@@ -1,5 +1,6 @@
 import { FastifyRedis } from "@fastify/redis";
 import { FastifyReply, FastifyRequest } from "fastify";
+import { secondsUntilMidnight } from "./utils/time";
 
 async function getWeather (day: string, city:string, apiKey: string) {
     return await fetch(`https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${city}/${day}?unitGroup=metric&include=days&key=${apiKey}&contentType=json`, {
@@ -15,11 +16,12 @@ export async function getWeatherToday(redis: FastifyRedis, request: FastifyReque
 
         const today = new Date().toISOString()
         const shorthandToday = today.split('T')[0]
-        
-        const storedTemp = await redis.hget(`${request.query?.city}:${shorthandToday}`, 'temp')
+        const redisKey = `${request.query?.city}:${shorthandToday}`
+
+        const storedTemp = await redis.hget(redisKey, 'temp')
        
         if(storedTemp){
-            const today = await redis.hgetall(`${request.query?.city}:${shorthandToday}`)
+            const today = await redis.hgetall(redisKey)
             
             return reply.status(200).send({message: 'Collected from stored value', today})
         } else {
@@ -35,7 +37,7 @@ export async function getWeatherToday(redis: FastifyRedis, request: FastifyReque
             
             const weather = await response.json()
     
-            await redis.hset(`${request.query?.city}:${shorthandToday}`, 
+            await redis.hset(redisKey, 
                 'temp', weather.days[0].temp, 
                 'description', weather.days[0].description,
                 'tempmax', weather.days[0].tempmax, 
@@ -44,12 +46,10 @@ export async function getWeatherToday(redis: FastifyRedis, request: FastifyReque
                 'feelslike', weather.days[0].feelslike,
                 'uvindex',  weather.days[0].uvindex)
 
+            await redis.expire(redisKey, secondsUntilMidnight())
+            
             return reply.status(200).send(weather)
         }
-       
-        
-        
-
     } catch(error) {
         console.log(error)
         return reply.status(400).send(error)
@@ -57,7 +57,6 @@ export async function getWeatherToday(redis: FastifyRedis, request: FastifyReque
 }
 
 export async function getWeatherTomorrow(redis: FastifyRedis, request: FastifyRequest, reply: FastifyReply){
-    // check redis first
     try {
         if (!request.query?.city) {
             return reply.status(400).send({message: 'Please provide a city'})
@@ -65,12 +64,12 @@ export async function getWeatherTomorrow(redis: FastifyRedis, request: FastifyRe
      
         const tomorrow = new Date()
         tomorrow.setUTCDate(new Date().getUTCDate() + 1)
-        const shorthandTomorrow = tomorrow
-
-        const storedTemp = await redis.hget(`${request.query?.city}:${shorthandTomorrow}`, 'temp')
+        const shorthandTomorrow = tomorrow.toISOString().split('T')[0]
+        const redisKey = `${request.query?.city}:${shorthandTomorrow}`
+        const storedTemp = await redis.hget(redisKey, 'temp')
        
         if(storedTemp){
-            const tomorrow = await redis.hgetall(`${request.query?.city}:${shorthandTomorrow}`)
+            const tomorrow = await redis.hgetall(redisKey)
             
             return reply.status(200).send({message: 'Collected from stored value', tomorrow})
         } else {
@@ -87,7 +86,7 @@ export async function getWeatherTomorrow(redis: FastifyRedis, request: FastifyRe
             
             const weather = await response.json()
 
-            await redis.hset(`${request.query?.city}:${shorthandTomorrow}`, 
+            await redis.hset(redisKey, 
                 'temp', weather.days[0].temp, 
                 'description', weather.days[0].description,
                 'tempmax', weather.days[0].tempmax, 
@@ -96,6 +95,8 @@ export async function getWeatherTomorrow(redis: FastifyRedis, request: FastifyRe
                 'feelslike', weather.days[0].feelslike,
                 'uvindex',  weather.days[0].uvindex)
 
+            await redis.expire(redisKey, secondsUntilMidnight())
+            
             return reply.status(200).send(weather)
         }
     } catch(error) {
@@ -116,11 +117,17 @@ export async function getWeatherConditionToday(redis: FastifyRedis, request: Fas
 
         const today = new Date().toISOString()
         const shorthandToday = today.split('T')[0]
+        const tomorrow = new Date()
+        tomorrow.setUTCDate(new Date().getUTCDate() + 1)
+        // tomorrow.setHours(0,0,0,0)
 
-        const storedTemp = await redis.hget(`${request.query?.city}:${shorthandToday}`, 'temp')
+
+        const redisKey = `${request.query?.city}:${shorthandToday}`
+
+        const storedTemp = await redis.hget(redisKey, 'temp')
        
         if(storedTemp){
-            const today = await redis.hgetall(`${request.query?.city}:${shorthandToday}`)
+            const today = await redis.hgetall(redisKey)
             
             return reply.status(200).send({message: 'Collected from stored value', today})
         } else {
@@ -132,7 +139,7 @@ export async function getWeatherConditionToday(redis: FastifyRedis, request: Fas
             const weather = await response.json()
             const todaysWeather = weather.days[0]
 
-            await redis.hset(`${request.query?.city}:${shorthandToday}`, 
+            await redis.hset(redisKey, 
                 'temp', todaysWeather.temp, 
                 'description', todaysWeather.description,
                 'tempmax', todaysWeather.tempmax, 
@@ -141,6 +148,10 @@ export async function getWeatherConditionToday(redis: FastifyRedis, request: Fas
                 'feelslike', todaysWeather.feelslike,
                 'uvindex',  todaysWeather.uvindex)
 
+            
+            await redis.expire(redisKey, secondsUntilMidnight())
+
+    
             if(request.query?.weatherCondition === 'snow'){
                 return todaysWeather.snow > 0 ? reply.status(200).send({snowDepth: todaysWeather.snowDepth, 
                     conditions: `${todaysWeather.conditions}. ${todaysWeather.description}`}) 
