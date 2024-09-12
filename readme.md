@@ -1,6 +1,6 @@
 https://roadmap.sh/projects/weather-api-wrapper-service
 
-# Fasitfy API to fetch weather for today & tomorrow :rain_cloud: :sunny: 
+# Fasitfy API to fetch weather for today & tomorrow :rainbow: :sunny: :umbrella: :partly_sunny:
 
 To run locally:
 
